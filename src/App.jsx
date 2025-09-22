@@ -16,7 +16,7 @@ import Orders from "./Components/Orders";
 import Cart from "./Components/Cart";
 import Checkout from "./Components/Checkout";
 import Footer from "./Components/Footer";
-import NotFound from "./Components/NotFound";
+import NotFound from './Components/Notfound'
 import Settings from "./Components/Settings";
 
 // 🔹 Simple auth check
