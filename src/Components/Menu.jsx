@@ -2,130 +2,117 @@ import React, { useEffect, useState } from "react";
 
 const Menu = () => {
   const [menuItems, setMenuItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const username = localStorage.getItem("username");
 
   useEffect(() => {
-    // Fetch menu items from backend
     const fetchMenu = async () => {
-      try {
-        const response = await fetch("http://localhost:3000/restaurants");
-        if (!response.ok) {
-          throw new Error("Failed to fetch menu items");
-        }
-        const data = await response.json();
-        setMenuItems(data);
-      } catch (err) {
-        console.error(err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+      const res = await fetch("http://localhost:3000/restaurants");
+      const data = await res.json();
+      setMenuItems(data);
     };
-
     fetchMenu();
   }, []);
 
-  if (loading) return <p style={{ textAlign: "center" }}>Loading menu...</p>;
-  if (error) return <p style={{ textAlign: "center", color: "red" }}>{error}</p>;
+  const addToCart = async (item) => {
+    if (!username) return alert("Please log in first");
+
+    const res = await fetch("http://localhost:3000/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username,
+        items: [{ restaurantId: item._id, name: item.name, price: item.price, description: item.description || 0, quantity: 1, image: item.image }],
+      }),
+    });
+    const data = await res.json();
+    if (res.ok) alert("✅ Added to cart!");
+    else alert("❌ Error: " + data.error);
+  };
 
   return (
-    <div style={styles.wrapper}>
-      <main style={styles.content}>
-        <h1 style={styles.title}>Explore Our Menu</h1>
-        <div style={styles.grid}>
-          {menuItems.map((item) => (
-            <div key={item._id} style={styles.card}>
-              <img src={item.image} alt={item.name} style={styles.image} />
-              <h2 style={styles.name}>{item.name}</h2>
-              <p style={styles.description}>{item.description || item.cuisine}</p>
-              <p style={styles.price}>R{item.price || "N/A"}</p>
-              <button style={styles.button}>Add to Cart</button>
-            </div>
-          ))}
+    <div
+      style={{
+        minHeight: "100vh",
+        padding: "40px",
+        background: "linear-gradient(135deg, #1a2233 0%, #2e3b55 100%)",
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+        gap: "25px",
+        boxSizing: "border-box",
+      }}
+    >
+      {menuItems.map((item) => (
+        <div
+          key={item._id}
+          style={{
+            borderRadius: "15px",
+            overflow: "hidden",
+            background: "#2e3b55",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+            transition: "transform 0.3s, box-shadow 0.3s",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-5px)";
+            e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.4)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.25)";
+          }}
+        >
+          <img
+            src={item.image}
+            alt={item.name}
+            style={{
+              width: "100%",
+              height: "180px",
+              objectFit: "cover",
+              backgroundColor: "#444",
+              transition: "transform 0.3s",
+            }}
+            onError={(e) => {
+              e.target.src =
+                "https://via.placeholder.com/300x180.png?text=Image+Unavailable";
+            }}
+          />
+          <div style={{ padding: "15px" }}>
+            <h2 style={{ margin: "0 0 10px", color: "#ffd166", fontSize: "1.2rem" }}>
+              {item.name}
+            </h2>
+            <p style={{ margin: "0 0 10px", color: "#e9ecf1", opacity: 0.85 }}>
+              R{item.price || 0}
+            </p>
+            <button
+              onClick={() => addToCart(item)}
+              style={{
+                width: "100%",
+                padding: "0.5rem 1rem",
+                borderRadius: 12,
+                border: "none",
+                background: "linear-gradient(90deg, #0074d9 60%, #ff7a59 100%)",
+                color: "#fff",
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 6px 20px rgba(0, 116, 217, 0.18)",
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,116,217,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,116,217,0.18)";
+              }}
+            >
+              Add to Cart
+            </button>
+          </div>
         </div>
-      </main>
-
-      <footer style={styles.footer}>
-        © 2025 Q-Foodies. All rights reserved.
-      </footer>
+      ))}
     </div>
   );
-};
-
-const styles = {
-  wrapper: {
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100vh",
-    backgroundColor: "#0f1115",
-    color: "#e9ecf1",
-    fontFamily: "Inter, sans-serif",
-  },
-  content: {
-    flex: 1,
-    padding: "2rem",
-    maxWidth: "1100px",
-    margin: "0 auto",
-  },
-  title: {
-    textAlign: "center",
-    color: "#ff7a59",
-    fontSize: "2.5rem",
-    marginBottom: "2rem",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "2rem",
-  },
-  card: {
-    backgroundColor: "#1a2233",
-    borderRadius: 16,
-    padding: "1.5rem",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
-    textAlign: "center",
-  },
-  image: {
-    width: "100%",
-    height: "160px",
-    objectFit: "cover",
-    borderRadius: "12px",
-    marginBottom: "1rem",
-  },
-  name: {
-    fontSize: "1.4rem",
-    fontWeight: "bold",
-    color: "#ffd166",
-  },
-  description: {
-    fontSize: "1rem",
-    color: "#b0b7c3",
-    margin: "0.5rem 0",
-  },
-  price: {
-    fontWeight: "bold",
-    color: "#4ade80",
-    marginBottom: "0.8rem",
-  },
-  button: {
-    padding: "0.6rem 1rem",
-    background: "linear-gradient(90deg, #0074d9 0%, #ff7a59 100%)",
-    color: "#fff",
-    border: "none",
-    borderRadius: "10px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    transition: "background 0.2s ease",
-  },
-  footer: {
-    textAlign: "center",
-    padding: "1rem",
-    background: "linear-gradient(90deg, #0074d9, #ff7a59)",
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: "1rem",
-  },
 };
 
 export default Menu;

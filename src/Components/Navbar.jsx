@@ -43,7 +43,7 @@ const styles = {
 
 const navItems = [
   { to: "/Homepage", label: "Home" },
-  { to: "/Restaurant", label: "Restaurants" },
+  //{ to: "/Restaurant", label: "Restaurants" },//
   { to: "/Menu", label: "Menu" },
   { to: "/Orders", label: "Orders" },
   { to: "/Cart", label: "Cart" },

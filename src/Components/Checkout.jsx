@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const banks = [
   'Nedbank',
@@ -72,14 +72,45 @@ const styles = {
     boxShadow: '0 10px 24px rgba(0, 116, 217, .18)',
     transition: 'background .15s',
   },
-  success: {
-    textAlign: 'center',
-    padding: '2rem',
-    background: '#1a2233',
+  overlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    background: "rgba(0,0,0,0.75)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+  popup: {
+    background: "#1a2233",
+    padding: "2rem 2.5rem",
     borderRadius: 18,
-    color: '#4ade80',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
-    marginTop: '40px',
+    color: "#fff",
+    textAlign: "center",
+    boxShadow: "0 10px 35px rgba(0,0,0,0.55)",
+    minWidth: "300px",
+  },
+  progressBarContainer: {
+    width: "100%",
+    height: "15px",
+    background: "#333",
+    borderRadius: 10,
+    overflow: "hidden",
+    marginTop: "1rem",
+  },
+  progressBar: {
+    height: "100%",
+    background: "#4ade80",
+    width: "0%",
+    transition: "width 0.2s ease",
+  },
+  successText: {
+    color: "#4ade80",
+    fontWeight: "bold",
+    marginTop: "1rem",
   }
 };
 
@@ -87,61 +118,144 @@ function Checkout() {
   const [bank, setBank] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [name, setName] = useState('');
+  const [location, setLocation] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [tracking, setTracking] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [paid, setPaid] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setPaid(true);
+    setProcessing(true);
+
+    // Start processing
+    setTimeout(() => {
+      setProcessing(false);
+      setTracking(true);
+    }, 2000); // 2 seconds processing
   };
 
-  if (paid) {
-    return (
-      <div style={styles.success}>
-        <h2>Payment Successful!</h2>
-        <p>Thank you for your purchase.</p>
-      </div>
-    );
-  }
+  // Handle delivery tracking progress
+  useEffect(() => {
+    if (!tracking) return;
+    setProgress(0);
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTracking(false);
+          setPaid(true);
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 200); // every 200ms
+    return () => clearInterval(interval);
+  }, [tracking]);
+
+  // Hide "Payment Successful" notification after 5 seconds
+  useEffect(() => {
+    if (!paid) return;
+    const timer = setTimeout(() => {
+      setPaid(false);
+    }, 5000); // 5 seconds
+    return () => clearTimeout(timer);
+  }, [paid]);
 
   return (
-    <form onSubmit={handleSubmit} style={styles.container}>
-      <h2 style={styles.heading}>Checkout</h2>
-      <label style={styles.label}>
-        Select Bank:
-        <select
-          value={bank}
-          onChange={e => setBank(e.target.value)}
-          required
-          style={styles.select}
-        >
-          <option value="">--Choose a bank--</option>
-          {banks.map(b => (
-            <option key={b} value={b}>{b}</option>
-          ))}
-        </select>
-      </label>
-      <label style={styles.label}>
-        Account Number:
-        <input
-          type="text"
-          value={accountNumber}
-          onChange={e => setAccountNumber(e.target.value)}
-          required
-          style={styles.input}
-        />
-      </label>
-      <label style={styles.label}>
-        Name on Account:
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          required
-          style={styles.input}
-        />
-      </label>
-      <button type="submit" style={styles.button}>Pay Now</button>
-    </form>
+    <>
+      {/* Processing Overlay */}
+      {processing && (
+        <div style={styles.overlay}>
+          <div style={styles.popup}>
+            <h2>Processing Payment...</h2>
+            <p>Please wait while we confirm your payment.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Tracking Overlay */}
+      {tracking && (
+        <div style={styles.overlay}>
+          <div style={styles.popup}>
+            <h2>Order is on the way!</h2>
+            <p>Tracking your delivery to:</p>
+            <p style={{ fontWeight: "bold", color: "#ffd166" }}>{location}</p>
+            <div style={styles.progressBarContainer}>
+              <div style={{ ...styles.progressBar, width: `${progress}%` }} />
+            </div>
+            <p style={styles.successText}>{progress}%</p>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Success Notification */}
+      {paid && (
+        <div style={styles.overlay}>
+          <div style={styles.popup}>
+            <h2>Payment Successful!</h2>
+            <p>Your order will arrive shortly at:</p>
+            <p style={{ fontWeight: "bold", color: "#ffd166" }}>{location}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Form */}
+      <form onSubmit={handleSubmit} style={styles.container}>
+        <h2 style={styles.heading}>Checkout</h2>
+
+        <label style={styles.label}>
+          Select Bank:
+          <select
+            value={bank}
+            onChange={e => setBank(e.target.value)}
+            required
+            style={styles.select}
+          >
+            <option value="">--Choose a bank--</option>
+            {banks.map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </label>
+
+        <label style={styles.label}>
+          Account Number:
+          <input
+            type="text"
+            value={accountNumber}
+            onChange={e => setAccountNumber(e.target.value)}
+            required
+            style={styles.input}
+          />
+        </label>
+
+        <label style={styles.label}>
+          Name on Account:
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+            style={styles.input}
+          />
+        </label>
+
+        <label style={styles.label}>
+          Delivery Location / Address:
+          <input
+            type="text"
+            value={location}
+            onChange={e => setLocation(e.target.value)}
+            required
+            placeholder="e.g. 23 Market Street, Johannesburg"
+            style={styles.input}
+          />
+        </label>
+
+        <button type="submit" style={styles.button}>Pay Now</button>
+      </form>
+    </>
   );
 }
 
