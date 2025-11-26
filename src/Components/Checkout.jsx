@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 
 const banks = [
   'Nedbank',
@@ -115,6 +116,8 @@ const styles = {
 };
 
 function Checkout() {
+  const navigate = useNavigate();
+
   const [bank, setBank] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [name, setName] = useState('');
@@ -145,13 +148,19 @@ function Checkout() {
           clearInterval(interval);
           setTracking(false);
           setPaid(true);
+
+          // Redirect to Orders page after 2 seconds
+          setTimeout(() => {
+            navigate("/orders");
+          }, 2000);
+
           return 100;
         }
         return prev + 5;
       });
     }, 200); // every 200ms
     return () => clearInterval(interval);
-  }, [tracking]);
+  }, [tracking, navigate]);
 
   // Hide "Payment Successful" notification after 5 seconds
   useEffect(() => {
